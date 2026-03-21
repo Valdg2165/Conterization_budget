@@ -1,0 +1,133 @@
+services:
+
+  # ── Auth API ───────────────────────────────────────────────────────────────────
+  auth-api:
+    image: ${DOCKER_HUB_USER}/budget-auth-api:${IMAGE_TAG:-latest}
+    container_name: auth-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: mongodb://${AUTH_DB_USER}:${AUTH_DB_PASSWORD}@auth-db:27017/${AUTH_DB_NAME}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: http://localhost
+    ports:
+      - "3001:3001"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - frontend-net
+      - auth-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Auth DB ────────────────────────────────────────────────────────────────────
+  auth-db:
+    image: mongo:7.0.11
+    container_name: auth-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${AUTH_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${AUTH_DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${AUTH_DB_NAME}
+    volumes:
+      - auth-db-data:/data/db
+    networks:
+      - auth-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Powens API ─────────────────────────────────────────────────────────────────
+  powens-api:
+    image: ${DOCKER_HUB_USER}/budget-powens-api:${IMAGE_TAG:-latest}
+    container_name: powens-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: mongodb://${POWENS_DB_USER}:${POWENS_DB_PASSWORD}@powens-db:27017/${POWENS_DB_NAME}?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      POWENS_CLIENT_ID: ${POWENS_CLIENT_ID}
+      POWENS_CLIENT_SECRET: ${POWENS_CLIENT_SECRET}
+      POWENS_BASE_URL: ${POWENS_BASE_URL}
+      POWENS_WEBVIEW_URL: ${POWENS_WEBVIEW_URL}
+      CALLBACK_URL: ${CALLBACK_URL}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      CORS_ORIGIN: http://localhost
+    ports:
+      - "3003:3002"
+    depends_on:
+      powens-db:
+        condition: service_healthy
+    networks:
+      - frontend-net
+      - powens-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Powens DB ──────────────────────────────────────────────────────────────────
+  powens-db:
+    image: mongo:7.0.11
+    container_name: powens-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${POWENS_DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${POWENS_DB_PASSWORD}
+      MONGO_INITDB_DATABASE: ${POWENS_DB_NAME}
+    volumes:
+      - powens-db-data:/data/db
+    networks:
+      - powens-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Frontend (nginx) ───────────────────────────────────────────────────────────
+  frontend:
+    image: ${DOCKER_HUB_USER}/budget-frontend:${IMAGE_TAG:-latest}
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - frontend-net
+    depends_on:
+      - auth-api
+      - powens-api
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  frontend-net:
+    driver: bridge
+  auth-net:
+    driver: bridge
+  powens-net:
+    driver: bridge
+
+volumes:
+  auth-db-data:
+    name: auth-db-data
+  powens-db-data:
+    name: powens-db-data
