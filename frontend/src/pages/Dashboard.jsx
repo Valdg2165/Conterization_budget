@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, NavLink, useSearchParams } from 'react-router-dom'
 import authClient from '../api/authClient'
 import powensClient from '../api/powensClient'
 
@@ -67,8 +67,8 @@ export default function Dashboard() {
         <span className="app-header-logo">BudgetApp</span>
         <nav className="app-nav">
           {connected && <>
-            <Link to="/accounts">Accounts</Link>
-            <Link to="/transactions">Transactions</Link>
+            <NavLink to="/accounts" className={({ isActive }) => isActive ? 'active' : ''}>Accounts</NavLink>
+            <NavLink to="/transactions" className={({ isActive }) => isActive ? 'active' : ''}>Transactions</NavLink>
           </>}
         </nav>
         <div className="app-header-actions">

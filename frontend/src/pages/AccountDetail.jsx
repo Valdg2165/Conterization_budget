@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { NavLink, useParams, useSearchParams } from 'react-router-dom'
 import powensClient from '../api/powensClient'
 
 function useTheme() {
@@ -55,9 +55,9 @@ export default function AccountDetail() {
       <header className="app-header">
         <span className="app-header-logo">BudgetApp</span>
         <nav className="app-nav">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/accounts">Accounts</Link>
-          {!isInvestment && <Link to="/transactions">Transactions</Link>}
+          <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
+          <NavLink to="/accounts" className={({ isActive }) => isActive ? 'active' : ''}>Accounts</NavLink>
+          {!isInvestment && <NavLink to="/transactions" className={({ isActive }) => isActive ? 'active' : ''}>Transactions</NavLink>}
         </nav>
         <div className="app-header-actions">
           <button className="btn-icon" onClick={toggle} title="Toggle theme">
