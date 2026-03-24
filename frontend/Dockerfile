@@ -38,6 +38,7 @@ RUN npm run build
 FROM nginx:1.27.0-alpine3.19 AS production
 
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
   && chown -R appuser:appgroup /usr/share/nginx/html \
