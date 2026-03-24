@@ -15,6 +15,7 @@ Application web de gestion de budget personnel avec agrégation bancaire via l'A
                      ┌───────▼────────┐
                      │   Frontend     │
                      │  React + Vite  │
+                     │  nginx (prod)  │
                      └───┬───────┬───┘
                          │       │
            ┌─────────────▼─┐   ┌─▼─────────────┐
@@ -110,7 +111,18 @@ docker compose -f docker-compose.prod.yaml up -d  # démarre tout
 http://localhost
 ```
 
-> Le frontend est servi par nginx sur le port 80.
+> Le frontend est servi par nginx sur le port 80 avec SPA routing (React Router supporté).
+
+### 4. Vérifier que c'est la bonne version
+
+```bash
+# Voir le digest de l'image
+docker images valdg/budget-frontend --digests
+
+# Forcer le rechargement depuis Docker Hub
+docker compose -f docker-compose.prod.yaml pull
+docker compose -f docker-compose.prod.yaml up -d --force-recreate
+```
 
 ---
 
@@ -120,17 +132,17 @@ http://localhost
 # Se connecter
 docker login
 
-# Builder les images de production
-docker compose build
+# Builder les images
+docker compose build --no-cache
 
 # Pousser sur Docker Hub
 docker compose push
 ```
 
 Les images publiées :
-- `<user>/budget-auth-api:latest`
-- `<user>/budget-powens-api:latest`
-- `<user>/budget-frontend:latest`
+- `valdg/budget-auth-api:latest`
+- `valdg/budget-powens-api:latest`
+- `valdg/budget-frontend:latest`
 
 Pour versionner :
 ```bash
@@ -171,7 +183,7 @@ CALLBACK_URL=http://localhost:3003/api/powens/callback
 FRONTEND_URL=http://localhost:5173   # dev uniquement
 
 # ── Docker Hub ────────────────────────────────────────────────────────────
-DOCKER_HUB_USER=yourdockerhubusername
+DOCKER_HUB_USER=valdg
 IMAGE_TAG=latest
 
 # ── Frontend API URLs (baked in at build time) ────────────────────────────
@@ -194,9 +206,7 @@ Pour une base commune à toutes les machines, utilisez **MongoDB Atlas** (gratui
 2. Récupérez l'URI de connexion
 3. Dans `.env`, remplacez :
 ```ini
-# Auth
 AUTH_DB_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/auth_db
-# Powens
 POWENS_DB_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/powens_db
 ```
 4. Supprimez les services `auth-db` et `powens-db` du `docker-compose.prod.yaml`
@@ -264,11 +274,13 @@ Project_test/
 │   │   ├── index.css      # Variables CSS (thème clair/sombre)
 │   │   ├── api/           # Clients Axios
 │   │   └── pages/         # Login, Register, Dashboard, Accounts, Transactions
+│   ├── nginx.conf         # Config nginx pour SPA React (prod)
 │   └── Dockerfile         # 3 stages : development / build / production (nginx)
 │
 ├── docker-compose.yaml        # Dev (Vite, hot reload, port 5173)
 ├── docker-compose.prod.yaml   # Prod (images Docker Hub, nginx, port 80)
 ├── .env.example
+├── .gitattributes
 └── README.md
 ```
 
@@ -287,16 +299,22 @@ docker compose down -v                      # Arrêter + supprimer les volumes
 docker compose build --no-cache             # Rebuild les images
 
 # ── Production (Docker Hub) ───────────────────────────────────────────────
-docker compose -f docker-compose.prod.yaml pull    # Télécharger les images
-docker compose -f docker-compose.prod.yaml up -d   # Lancer
-docker compose -f docker-compose.prod.yaml ps      # Statut
-docker compose -f docker-compose.prod.yaml logs -f # Logs
-docker compose -f docker-compose.prod.yaml down     # Arrêter
+docker compose -f docker-compose.prod.yaml pull              # Télécharger les images
+docker compose -f docker-compose.prod.yaml up -d             # Lancer
+docker compose -f docker-compose.prod.yaml up -d --force-recreate  # Forcer recréation
+docker compose -f docker-compose.prod.yaml ps                # Statut
+docker compose -f docker-compose.prod.yaml logs -f           # Logs
+docker compose -f docker-compose.prod.yaml down              # Arrêter
 
 # ── Publier sur Docker Hub ────────────────────────────────────────────────
 docker login
-docker compose build
+docker compose build --no-cache
 docker compose push
+
+# ── Git ───────────────────────────────────────────────────────────────────
+git branch -a                               # Voir toutes les branches
+git checkout feature/frontend-redesign      # Changer de branche
+git fetch origin                            # Mettre à jour les branches distantes
 ```
 
 ---
@@ -309,6 +327,7 @@ docker compose push
 - Conteneurs en **utilisateur non-root**
 - Réseaux Docker isolés : la base Auth n'est pas accessible depuis le réseau Powens
 - CORS configuré à l'origine exacte du frontend (`http://localhost` en prod)
+- Variables sensibles via fichier `.env` (jamais commitées)
 
 ---
 

@@ -62,7 +62,7 @@ services:
       POWENS_BASE_URL: ${POWENS_BASE_URL}
       POWENS_WEBVIEW_URL: ${POWENS_WEBVIEW_URL}
       CALLBACK_URL: ${CALLBACK_URL}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      FRONTEND_URL: http://localhost
       CORS_ORIGIN: http://localhost
     ports:
       - "3003:3002"

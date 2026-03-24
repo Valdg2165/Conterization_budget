@@ -8,6 +8,14 @@ const router = express.Router();
 const CALLBACK_URL   = process.env.CALLBACK_URL;    // http://localhost:3003/api/powens/callback
 const FRONTEND_URL   = process.env.FRONTEND_URL;    // http://localhost:5173
 
+// Returns an HTML page that navigates out of any iframe context (no inline JS, CSP-safe)
+function redirectPage(url) {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${url}"><title>Redirection...</title></head>
+<body><p>Redirection en cours... <a href="${url}">Cliquez ici</a> si vous n'êtes pas redirigé.</p>
+</body></html>`;
+}
+
 // GET /api/powens/init
 // Returns the WebView URL for the user to connect their bank
 router.get('/init', requireAuth, async (req, res) => {
@@ -39,11 +47,11 @@ router.get('/callback', async (req, res) => {
 
   if (error) {
     console.error('Powens callback error:', error, error_description);
-    return res.redirect(`${FRONTEND_URL}/dashboard?error=${encodeURIComponent(error_description || error)}`);
+    return res.send(redirectPage(`${FRONTEND_URL}/dashboard?error=${encodeURIComponent(error_description || error)}`));
   }
 
   if (!connection_id || !state) {
-    return res.redirect(`${FRONTEND_URL}/dashboard?error=missing_params`);
+    return res.send(redirectPage(`${FRONTEND_URL}/dashboard?error=missing_params`));
   }
 
   try {
@@ -53,10 +61,10 @@ router.get('/callback', async (req, res) => {
       { $addToSet: { connection_ids: connection_id }, updated_at: new Date() }
     );
 
-    res.redirect(`${FRONTEND_URL}/dashboard?connected=1`);
+    res.send(redirectPage(`${FRONTEND_URL}/dashboard?connected=1`));
   } catch (err) {
     console.error('Callback error:', err.message);
-    res.redirect(`${FRONTEND_URL}/dashboard?error=server_error`);
+    res.send(redirectPage(`${FRONTEND_URL}/dashboard?error=server_error`));
   }
 });
 
