@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const authClient = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_API_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_AUTH_API_URL || '',
 })
 
 // Attach JWT on every request if present

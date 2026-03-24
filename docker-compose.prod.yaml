@@ -11,9 +11,7 @@ services:
       DATABASE_URL: mongodb://${AUTH_DB_USER}:${AUTH_DB_PASSWORD}@auth-db:27017/${AUTH_DB_NAME}?authSource=admin
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      CORS_ORIGIN: http://localhost
-    ports:
-      - "3001:3001"
+      CORS_ORIGIN: ${FRONTEND_URL}
     depends_on:
       auth-db:
         condition: service_healthy
@@ -62,10 +60,8 @@ services:
       POWENS_BASE_URL: ${POWENS_BASE_URL}
       POWENS_WEBVIEW_URL: ${POWENS_WEBVIEW_URL}
       CALLBACK_URL: ${CALLBACK_URL}
-      FRONTEND_URL: http://localhost
-      CORS_ORIGIN: http://localhost
-    ports:
-      - "3003:3002"
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGIN: ${FRONTEND_URL}
     depends_on:
       powens-db:
         condition: service_healthy
@@ -104,15 +100,15 @@ services:
     image: ${DOCKER_HUB_USER}/budget-frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     restart: unless-stopped
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     networks:
       - frontend-net
     depends_on:
       - auth-api
       - powens-api
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      test: ["CMD", "nginx", "-t"]
       interval: 30s
       timeout: 5s
       retries: 3

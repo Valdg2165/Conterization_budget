@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const powensClient = axios.create({
-  baseURL: import.meta.env.VITE_POWENS_API_URL || 'http://localhost:3003',
+  baseURL: import.meta.env.VITE_POWENS_API_URL || '',
 })
 
 powensClient.interceptors.request.use((config) => {
